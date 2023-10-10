@@ -1,0 +1,4 @@
+meshdbname="meshtestdb"
+blobdbname="blobteststore"
+blobbucketname="testblobs"
+dburl="mongodb://user:password@host:port"
