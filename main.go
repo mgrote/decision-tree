@@ -23,19 +23,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	//cmd := exec.Command("ls", "-l")
-	////err := cmd.Run()
-	////if err != nil {
-	////	fmt.Println(err)
-	////	os.Exit(1)
-	////}
-	//out, err := cmd.Output()
-	//if err != nil {
-	//	fmt.Println(err)
-	//	os.Exit(1)
-	//}
-	//fmt.Print(string(out))
-
 	evaluateForMain, err := prepareCommands()
 	if err != nil {
 		fmt.Println(err)

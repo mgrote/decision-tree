@@ -3,8 +3,7 @@ package command
 import (
 	"fmt"
 	"github.com/mgrote/decision-tree/tree"
-	"github.com/mgrote/decision-tree/tree/treemodels/decision"
-	"github.com/mgrote/decision-tree/tree/treemodels/destination"
+	"github.com/mgrote/decision-tree/tree/treemodels"
 	"github.com/mgrote/meshed/mesh"
 	"log"
 	"reflect"
@@ -57,34 +56,21 @@ func ExecuteCommand(m mesh.Node, input interface{}) error {
 	if !ok {
 		return fmt.Errorf("%s.%s: could not convert content from %v to command", m.GetTypeName(), m.GetID().String(), m)
 	}
+
 	if reflect.TypeOf(input) != command.ExpectedInputType {
 		return fmt.Errorf("%s.%s: input type %v does not match expected input type %v", m.GetTypeName(), m.GetID().String(), reflect.TypeOf(input), command.ExpectedInputType)
 	}
+
 	out, err := command.execute(input)
 	if err != nil {
 		return fmt.Errorf("%s.%s: could not execute command: %v", m.GetTypeName(), m.GetID().String(), err)
 	}
+
 	if reflect.TypeOf(out) != command.ExpectedReturnType {
 		return fmt.Errorf("%s.%s: return type %v does not match expected output type %v", m.GetTypeName(), m.GetID().String(), reflect.TypeOf(out), command.ExpectedReturnType)
 	}
-	// aggregate errors
-	var aggregated error
-	for _, node := range m.GetChildren(tree.CommandType) {
-		if err = ExecuteCommand(node, out); err != nil {
-			aggregated = fmt.Errorf("%s: %w", command.Name, err)
-		}
-	}
-	for _, node := range m.GetChildren(tree.DecisionType) {
-		if err = decision.Decide(node, out); err != nil {
-			aggregated = fmt.Errorf("%s: %w", command.Name, err)
-		}
-	}
-	for _, node := range m.GetChildren(tree.DestinationType) {
-		if err = destination.Terminate(node, out); err != nil {
-			aggregated = fmt.Errorf("%s: %w", command.Name, err)
-		}
-	}
-	return aggregated
+
+	return treemodels.ExecuteNodes(m.GetChildrenIn(tree.CommandType, tree.DecisionType, tree.DestinationType), out, command.Name)
 }
 
 func GetFromMap(content map[string]interface{}) interface{} {
