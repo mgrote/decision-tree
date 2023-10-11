@@ -1,37 +1,24 @@
-package command
+package tree
 
 import (
 	"fmt"
-	"github.com/mgrote/decision-tree/tree"
-	"github.com/mgrote/decision-tree/tree/treemodels"
 	"github.com/mgrote/meshed/mesh"
 	"log"
 	"reflect"
 )
 
-func NodeType() mesh.NodeType {
-	return mesh.NewNodeType([]string{tree.CommandType, tree.DecisionType}, "command")
-}
-
-type Command struct {
-	// The name of the command.
-	Name string `json:"name"`
-	// The expected input type.
-	ExpectedInputType interface{}
-	// The expected return type.
-	ExpectedReturnType interface{}
-	// The command to execute.
-	execute func(input interface{}) (interface{}, error)
+func CommandNodeType() mesh.NodeType {
+	return mesh.NewNodeType([]string{CommandType, DecisionType}, "command")
 }
 
 func init() {
 	log.Println("user init called")
 	mesh.RegisterTypeConverter("user",
 		func() *mesh.Node {
-			node := mesh.NewNodeWithContent(NodeType(), Command{})
+			node := mesh.NewNodeWithContent(CommandNodeType(), Command{})
 			return &node
 		})
-	mesh.RegisterContentConverter(tree.CommandType, GetFromMap)
+	mesh.RegisterContentConverter(CommandType, GetCommandFromMap)
 }
 
 // NewCommandNode creates a new command node
@@ -42,7 +29,7 @@ func NewCommandNode(title string, execFunction func(interface{}) (interface{}, e
 		ExpectedInputType:  inputType,
 		ExpectedReturnType: returnType,
 	}
-	node := mesh.NewNodeWithContent(NodeType(), command)
+	node := mesh.NewNodeWithContent(CommandNodeType(), command)
 	err := node.Save()
 	if err != nil {
 		return nil, fmt.Errorf("could not save node: %v", err)
@@ -70,10 +57,10 @@ func ExecuteCommand(m mesh.Node, input interface{}) error {
 		return fmt.Errorf("%s.%s: return type %v does not match expected output type %v", m.GetTypeName(), m.GetID().String(), reflect.TypeOf(out), command.ExpectedReturnType)
 	}
 
-	return treemodels.ExecuteNodes(m.GetChildrenIn(tree.CommandType, tree.DecisionType, tree.DestinationType), out, command.Name)
+	return ExecuteNodes(m.GetChildrenIn(CommandType, DecisionType, DestinationType), out, command.Name)
 }
 
-func GetFromMap(content map[string]interface{}) interface{} {
+func GetCommandFromMap(content map[string]interface{}) interface{} {
 	command := Command{}
 	if name, ok := content["name"].(string); ok {
 		command.Name = name

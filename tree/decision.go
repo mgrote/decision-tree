@@ -1,9 +1,7 @@
-package decision
+package tree
 
 import (
 	"fmt"
-	"github.com/mgrote/decision-tree/tree"
-	"github.com/mgrote/decision-tree/tree/treemodels"
 	"github.com/mgrote/meshed/commonmodels"
 	"github.com/mgrote/meshed/commonmodels/categories"
 	"github.com/mgrote/meshed/mesh"
@@ -12,36 +10,28 @@ import (
 	"slices"
 )
 
-func NodeType() mesh.NodeType {
+func DecisionNodeType() mesh.NodeType {
 	return mesh.NewNodeType([]string{commonmodels.CategoryType}, "decision")
-}
-
-type Decision struct {
-	// The name of the command.
-	Name string `json:"name"`
-	// The expected input type.
-	ExpectedValueType interface{}
-	decide            func(input interface{}) ([]string, error)
 }
 
 func init() {
 	log.Println("user init called")
 	mesh.RegisterTypeConverter("user",
 		func() *mesh.Node {
-			node := mesh.NewNodeWithContent(NodeType(), Decision{})
+			node := mesh.NewNodeWithContent(DecisionNodeType(), Decision{})
 			return &node
 		})
-	mesh.RegisterContentConverter(tree.DecisionType, GetFromMap)
+	mesh.RegisterContentConverter(DecisionType, GetDecisionFromMap)
 }
 
-// NewDestinationNode creates a new destination node
-func NewDestinationNode(title string, execFunction func(interface{}) ([]string, error), valueType, returnType interface{}) (mesh.Node, error) {
+// NewDecisionNode creates a new decision node.
+func NewDecisionNode(title string, execFunction func(interface{}) ([]string, error), valueType, returnType interface{}) (mesh.Node, error) {
 	decision := Decision{
 		Name:              title,
 		decide:            execFunction,
 		ExpectedValueType: valueType,
 	}
-	node := mesh.NewNodeWithContent(NodeType(), decision)
+	node := mesh.NewNodeWithContent(DecisionNodeType(), decision)
 	err := node.Save()
 	if err != nil {
 		return nil, fmt.Errorf("could not save node: %v", err)
@@ -70,10 +60,10 @@ func Decide(m mesh.Node, input interface{}) error {
 
 	// Search nodes with matching categories from decision and execute them.
 	matchingNodes := getNodesByCategoryNames(m, decisions)
-	return treemodels.ExecuteNodes(matchingNodes, input, decision.Name)
+	return ExecuteNodes(matchingNodes, input, decision.Name)
 }
 
-func GetFromMap(content map[string]interface{}) interface{} {
+func GetDecisionFromMap(content map[string]interface{}) interface{} {
 	command := Decision{}
 	if name, ok := content["name"].(string); ok {
 		command.Name = name
@@ -89,7 +79,7 @@ func GetFromMap(content map[string]interface{}) interface{} {
 
 func getNodesByCategoryNames(m mesh.Node, names []string) []mesh.Node {
 	var nodes []mesh.Node
-	for _, node := range m.GetChildrenIn(tree.CommandType, tree.DecisionType, tree.DestinationType) {
+	for _, node := range m.GetChildrenIn(CommandType, DecisionType, DestinationType) {
 		catNodes := node.GetNodes(commonmodels.CategoryType)
 		for _, cat := range catNodes {
 			if slices.Contains(names, categories.GetCategory(cat).Name) {

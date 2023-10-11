@@ -1,34 +1,25 @@
-package destination
+package tree
 
 import (
 	"fmt"
-	"github.com/mgrote/decision-tree/tree"
 	"github.com/mgrote/meshed/commonmodels"
 	"github.com/mgrote/meshed/mesh"
 	"log"
 	"reflect"
 )
 
-func NodeType() mesh.NodeType {
+func DestinationNodeType() mesh.NodeType {
 	return mesh.NewNodeType([]string{commonmodels.CategoryType}, "destination")
-}
-
-type Destination struct {
-	// The name of the command.
-	Name string `json:"name"`
-	// The expected input type.
-	ExpectedInputType interface{}
-	terminate         func(input interface{}) error
 }
 
 func init() {
 	log.Println("user init called")
 	mesh.RegisterTypeConverter("user",
 		func() *mesh.Node {
-			node := mesh.NewNodeWithContent(NodeType(), Destination{})
+			node := mesh.NewNodeWithContent(DestinationNodeType(), Destination{})
 			return &node
 		})
-	mesh.RegisterContentConverter(tree.DestinationType, GetFromMap)
+	mesh.RegisterContentConverter(DestinationType, GetDestinationFromMap)
 }
 
 // NewDestinationNode creates a new destination node
@@ -38,7 +29,7 @@ func NewDestinationNode(title string, execFunction func(interface{}) error, inpu
 		terminate:         execFunction,
 		ExpectedInputType: inputType,
 	}
-	node := mesh.NewNodeWithContent(NodeType(), destination)
+	node := mesh.NewNodeWithContent(DestinationNodeType(), destination)
 	err := node.Save()
 	if err != nil {
 		return nil, fmt.Errorf("could not save node: %v", err)
@@ -61,7 +52,7 @@ func Terminate(m mesh.Node, input interface{}) error {
 	return nil
 }
 
-func GetFromMap(content map[string]interface{}) interface{} {
+func GetDestinationFromMap(content map[string]interface{}) interface{} {
 	command := Destination{}
 	if name, ok := content["name"].(string); ok {
 		command.Name = name

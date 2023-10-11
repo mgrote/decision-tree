@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/mgrote/decision-tree/tree/treemodels/command"
+	"github.com/mgrote/decision-tree/tree"
 	"github.com/mgrote/meshed/mesh"
 	"os"
 	"os/exec"
@@ -23,12 +23,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	evaluateForMain, err := prepareCommands()
+	evaluateForMainRoot, err := prepareCommands()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	err = command.ExecuteCommand(evaluateForMain, ".")
+	err = tree.ExecuteCommand(evaluateForMainRoot, ".")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -55,13 +55,13 @@ func prepareCommands() (mesh.Node, error) {
 		return out, nil
 	}
 
-	commandNode1, err := command.NewCommandNode("ls", commandFunction1, reflect.TypeOf(""), reflect.TypeOf(""))
+	commandNode1, err := tree.NewCommandNode("ls", commandFunction1, reflect.TypeOf(""), reflect.TypeOf(""))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	commandNode2, err := command.NewCommandNode("has_main", commandFunction2, reflect.TypeOf(""), reflect.TypeOf(""))
+	commandNode2, err := tree.NewCommandNode("has_main", commandFunction2, reflect.TypeOf(""), reflect.TypeOf(""))
 	if err != nil {
 		return nil, err
 	}
