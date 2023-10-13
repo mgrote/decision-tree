@@ -74,11 +74,12 @@ func prepareCommands() (mesh.Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		return string(out), nil
+		return strings.Split(string(out), "\n"), nil
 	}
 
 	commandChangeDir := func(input interface{}) (interface{}, error) {
-		cmd := exec.Command("cd", input.(string))
+		dirEntry := input.([]string)[3]
+		cmd := exec.Command("cd", dirEntry)
 		out, err := cmd.Output()
 		if err != nil {
 			return nil, err
@@ -122,12 +123,12 @@ func prepareCommands() (mesh.Node, error) {
 		handleError(err)
 	}
 
-	chDirNode, err := tree.NewCommandNode("cd", commandChangeDir, reflect.TypeOf(""), reflect.TypeOf(""))
+	chDirNode, err := tree.NewCommandNode("cd", commandChangeDir, reflect.TypeOf([]string{}), reflect.TypeOf(""))
 	if err != nil {
 		handleError(err)
 	}
 
-	findDirNode, err := tree.NewCommandNode("find", commandFindDirNames, reflect.TypeOf(""), reflect.TypeOf(""))
+	findDirNode, err := tree.NewCommandNode("find", commandFindDirNames, reflect.TypeOf(""), reflect.TypeOf([]string{}))
 	if err != nil {
 		handleError(err)
 	}

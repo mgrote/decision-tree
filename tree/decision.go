@@ -11,7 +11,7 @@ import (
 )
 
 func DecisionNodeType() mesh.NodeType {
-	return mesh.NewNodeType([]string{commonmodels.CategoryType}, "decision")
+	return mesh.NewNodeType([]string{CommandType, DecisionType, DestinationType, commonmodels.CategoryType}, "decision")
 }
 
 func init() {

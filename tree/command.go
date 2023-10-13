@@ -2,13 +2,14 @@ package tree
 
 import (
 	"fmt"
+	"github.com/mgrote/meshed/commonmodels"
 	"github.com/mgrote/meshed/mesh"
 	"log"
 	"reflect"
 )
 
 func CommandNodeType() mesh.NodeType {
-	return mesh.NewNodeType([]string{CommandType, DecisionType}, "command")
+	return mesh.NewNodeType([]string{CommandType, DecisionType, DestinationType, commonmodels.CategoryType}, "command")
 }
 
 func init() {

@@ -9,7 +9,7 @@ import (
 )
 
 func DestinationNodeType() mesh.NodeType {
-	return mesh.NewNodeType([]string{commonmodels.CategoryType}, "destination")
+	return mesh.NewNodeType([]string{CommandType, DecisionType, commonmodels.CategoryType}, "destination")
 }
 
 func init() {
