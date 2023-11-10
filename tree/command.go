@@ -42,20 +42,50 @@ func NewCommandNode(title string, execFunction func(interface{}) (interface{}, e
 func ExecuteCommand(m mesh.Node, input interface{}) error {
 	command, ok := m.GetContent().(Command)
 	if !ok {
-		return fmt.Errorf("%s.%s: could not convert content from %v to command", m.GetTypeName(), m.GetID().String(), m)
+		return fmt.Errorf("%s.%s '%s': could not convert content from %v to command", m.GetTypeName(), m.GetID(), command.Name, m)
 	}
 
+	if isSliceOrArray(input) && reflect.TypeOf(input) != command.ExpectedInputType {
+		return aggregatedExecuteCommand(m, command, input)
+	}
+
+	return executeSingleValueCommand(m, command, input)
+}
+
+// aggregatedExecuteCommand is called with a slice or array as input and iterates over the input elements.
+func aggregatedExecuteCommand(m mesh.Node, command Command, input interface{}) error {
+
+	if reflect.TypeOf(input).Elem() != command.ExpectedInputType {
+		return fmt.Errorf("%s.%s '%s': input type %v does not match expected input type %v", m.GetTypeName(), m.GetID(), command.Name, reflect.TypeOf(input), command.ExpectedInputType)
+	}
+
+	var aggregated error
+	var err error
+	elements := reflect.ValueOf(input)
+	debugErrorCounter := 0
+	for j := 0; j < elements.Len(); j++ {
+		if err = executeSingleValueCommand(m, command, elements.Index(j).Interface()); err != nil {
+			aggregated = fmt.Errorf("node %s: value \"%s\" - %d: %w", command.Name, elements.Index(j), debugErrorCounter, err)
+		}
+		debugErrorCounter++
+	}
+
+	return aggregated
+}
+
+func executeSingleValueCommand(m mesh.Node, command Command, input interface{}) error {
+
 	if reflect.TypeOf(input) != command.ExpectedInputType {
-		return fmt.Errorf("%s.%s: input type %v does not match expected input type %v", m.GetTypeName(), m.GetID().String(), reflect.TypeOf(input), command.ExpectedInputType)
+		return fmt.Errorf("%s.%s '%s': input type %v does not match expected input type %v", m.GetTypeName(), m.GetID(), command.Name, reflect.TypeOf(input), command.ExpectedInputType)
 	}
 
 	out, err := command.execute(input)
 	if err != nil {
-		return fmt.Errorf("%s.%s: could not execute command: %v", m.GetTypeName(), m.GetID().String(), err)
+		return fmt.Errorf("%s.%s '%s': could not execute command: %v", m.GetTypeName(), m.GetID(), command.Name, err)
 	}
 
 	if reflect.TypeOf(out) != command.ExpectedReturnType {
-		return fmt.Errorf("%s.%s: return type %v does not match expected output type %v", m.GetTypeName(), m.GetID().String(), reflect.TypeOf(out), command.ExpectedReturnType)
+		return fmt.Errorf("%s.%s '%s': return type %v does not match expected output type %v", m.GetTypeName(), m.GetID(), command.Name, reflect.TypeOf(out), command.ExpectedReturnType)
 	}
 
 	return ExecuteNodes(m.GetChildrenIn(CommandType, DecisionType, DestinationType), out, command.Name)
@@ -76,4 +106,8 @@ func GetCommandFromMap(content map[string]interface{}) interface{} {
 		command.ExpectedReturnType = returnType
 	}
 	return command
+}
+
+func isSliceOrArray(input interface{}) bool {
+	return reflect.TypeOf(input).Kind() == reflect.Slice || reflect.TypeOf(input).Kind() == reflect.Array
 }

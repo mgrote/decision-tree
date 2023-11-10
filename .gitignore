@@ -14,6 +14,9 @@ dry-run/
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# Developer tests
+devtest
+
 # config directories
 **.properties.ini
 # env files with secrets

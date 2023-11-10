@@ -6,6 +6,7 @@ import (
 	"github.com/mgrote/decision-tree/tree"
 	"github.com/mgrote/meshed/commonmodels/categories"
 	"github.com/mgrote/meshed/mesh"
+	"github.com/mgrote/meshed/meshserviceprovider/inmemorymap"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,7 +21,7 @@ func main() {
 	flag.Parse()
 
 	// Init API with default config.
-	if err := mesh.InitApiWithConfig(pathFlag); err != nil {
+	if err := inmemorymap.InitApi(); err != nil {
 		fmt.Println("init mesh api:", err)
 		os.Exit(1)
 	}
@@ -78,7 +79,7 @@ func prepareCommands() (mesh.Node, error) {
 	}
 
 	commandChangeDir := func(input interface{}) (interface{}, error) {
-		dirEntry := input.([]string)[3]
+		dirEntry := input.(string)
 		cmd := exec.Command("cd", dirEntry)
 		out, err := cmd.Output()
 		if err != nil {
@@ -123,7 +124,7 @@ func prepareCommands() (mesh.Node, error) {
 		handleError(err)
 	}
 
-	chDirNode, err := tree.NewCommandNode("cd", commandChangeDir, reflect.TypeOf([]string{}), reflect.TypeOf(""))
+	chDirNode, err := tree.NewCommandNode("cd", commandChangeDir, reflect.TypeOf(""), reflect.TypeOf(""))
 	if err != nil {
 		handleError(err)
 	}
