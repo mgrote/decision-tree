@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"errors"
 	"fmt"
 	"github.com/mgrote/meshed/commonmodels"
 	"github.com/mgrote/meshed/mesh"
@@ -59,18 +60,23 @@ func aggregatedExecuteCommand(m mesh.Node, command Command, input interface{}) e
 		return fmt.Errorf("%s.%s '%s': input type %v does not match expected input type %v", m.GetTypeName(), m.GetID(), command.Name, reflect.TypeOf(input), command.ExpectedInputType)
 	}
 
-	var aggregated error
-	var err error
 	elements := reflect.ValueOf(input)
-	debugErrorCounter := 0
+
+	aggregated := make([]error, 0, elements.Len())
 	for j := 0; j < elements.Len(); j++ {
-		if err = executeSingleValueCommand(m, command, elements.Index(j).Interface()); err != nil {
-			aggregated = fmt.Errorf("node %s: value \"%s\" - %d: %w", command.Name, elements.Index(j), debugErrorCounter, err)
+		if err := executeSingleValueCommand(m, command, elements.Index(j).Interface()); err != nil {
+			aggregated = append(aggregated, fmt.Errorf("node %s: value \"%s\": %w", command.Name, elements.Index(j), err))
 		}
-		debugErrorCounter++
 	}
 
-	return aggregated
+	if len(aggregated) == 0 {
+		return nil
+	}
+
+	aggregated = append(aggregated, errors.New(fmt.Sprintf("node %s: values \"%s\" causes errors", command.Name, elements)))
+
+	e := errors.Join(aggregated...)
+	return e
 }
 
 func executeSingleValueCommand(m mesh.Node, command Command, input interface{}) error {
